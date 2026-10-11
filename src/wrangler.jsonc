@@ -1,9 +1,7 @@
+
 {
-  // ProGuard Worker. Deploy from this folder with: npx wrangler deploy
-  // Secrets (DISCORD_CLIENT_SECRET, SESSION_SECRET, FIREBASE_SERVICE_ACCOUNT_JSON, DISCORD_BOT_TOKEN)
-  // are NOT in this file. Set them in the Cloudflare dashboard or with `wrangler secret put`.
   "name": "proguard",
-  "main": "worker.js",
+  "main": "src/worker.js",
   "compatibility_date": "2025-09-01",
   "assets": {
     "directory": "./public",
