@@ -2,7 +2,7 @@
 
 ## Files
 - `worker.js`: the Cloudflare Worker. Discord sign-in, signed server-side sessions, owner-only API, Firestore bridge, bot command queue.
-- `wrangler.jsonc`: Worker confi. Replaces your existing one. Keep the name `proguard`.
+- `wrangler.jsonc`: Worker config. Replaces your existing one. Keep the name `proguard`.
 - `public/`: the dashboard (`index.html`, `style.css`, `script.js`). Same design as before, with the Settings page and the owner panel corrected.
 - `bot.py`: your bot with the dashboard bridge added. Changes: a 60-second heartbeat, a command queue, report posts to a channel, and case status. Nothing else was changed except the `__main__` guard around `bot.run`.
 - `tests/`: automated tests (Worker, bot bridge, page). Run with `node --test tests/worker.test.mjs`, `python3 tests/test_bot_bridge.py`, and for the page `npm i jsdom@24` then `node --test tests/dom.test.mjs` in `tests/`.
