@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080d18">
+  <meta name="description" content="ProGuard — Discord community protection and moderation oversight.">
+  <title>ProGuard — Community Security</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+  <header class="topbar">
+    <a class="brand" href="#home" aria-label="ProGuard home"><span class="brand-mark"><svg viewBox="0 0 40 44" aria-hidden="true"><path d="M20 2 36 8v12c0 10-6.7 17.1-16 22C10.7 37.1 4 30 4 20V8L20 2Z"/><path d="m12 21 5.2 5.2L28.5 15"/></svg></span><span>PRO<span class="brand-light">GUARD</span></span></a>
+    <nav class="nav"><a href="#features">Features</a><a href="#how">How it works</a><a href="#security">Security</a></nav>
+    <a class="button button-small button-outline" href="/auth/discord"> <span class="discord-dot">◈</span> Sign in with Discord</a>
+  </header>
+  <main id="home">
+    <section class="hero wrap">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="pulse"></span> COMMUNITY SECURITY, UNDER CONTROL</div>
+        <h1>Keep your community<br><span>one step ahead.</span></h1>
+        <p class="hero-text">A focused moderation hub for reports, security activity, and oversight — with critical controls reserved for the owner.</p>
+        <div class="hero-actions"><a class="button button-primary" href="/auth/discord">Continue with Discord <span>↗</span></a><a class="text-link" href="#features">Explore ProGuard <span>↓</span></a></div>
+        <div class="trust-line"><span class="shield-mini">✓</span> Owner-controlled administration <i></i> Report-first moderation</div>
+      </div>
+      <div class="preview-shell" aria-label="Illustrative dashboard preview">
+        <div class="preview-top"><div class="window-dots"><b></b><b></b><b></b></div><span>PROGUARD / OVERVIEW</span><span class="preview-live"><i></i> PREVIEW</span></div>
+        <div class="preview-content">
+          <aside class="mock-sidebar"><div class="mock-logo"><span>⬡</span> ProGuard</div><div class="mock-nav active">▦ <span>Overview</span></div><div class="mock-nav">⚑ <span>Reports</span></div><div class="mock-nav">◷ <span>Activity log</span></div><div class="mock-nav">⚙ <span>Settings</span></div><div class="mock-side-bottom"><span class="tiny-shield">✓</span><small>SECURITY<br><b>Owner-managed</b></small></div></aside>
+          <div class="mock-main"><div class="mock-heading"><div><small>WORKSPACE</small><h3>Security overview</h3></div><span class="mock-avatar">PG</span></div><div class="mock-banner"><div class="banner-icon">✓</div><div><b>Protection overview</b><p>Review reports and recent activity in one place.</p></div><span class="banner-arrow">↗</span></div><div class="metric-grid"><div class="metric"><small>OPEN REPORTS</small><strong>—</strong><span>Waiting for live data</span></div><div class="metric"><small>CASES REVIEWED</small><strong>—</strong><span>Waiting for live data</span></div><div class="metric"><small>BOT STATUS</small><strong class="status-text"><i></i> Not connected</strong><span>Live status appears after setup</span></div></div><div class="activity-card"><div class="activity-head"><b>Recent activity</b><span>LIVE DATA NOT CONNECTED</span></div><div class="activity-row"><span class="activity-icon blue">⚑</span><div><b>Reports will appear here</b><small>Connect the secure API to load activity.</small></div><span class="activity-placeholder"></span></div><div class="activity-row"><span class="activity-icon purple">✓</span><div><b>Moderation actions</b><small>Review records from your bot backend.</small></div><span class="activity-placeholder"></span></div></div></div>
+        </div>
+        <div class="preview-foot"><span><i></i> Interface preview</span><span>Data appears after backend connection</span></div>
+      </div>
+    </section>
+    <section class="strip wrap"><div><span class="strip-icon">◈</span><b>Owner-first controls</b><small>Administrative access stays restricted</small></div><div><span class="strip-icon">⚑</span><b>Report review</b><small>One place to triage incoming reports</small></div><div><span class="strip-icon">⌁</span><b>Audit visibility</b><small>Designed for clear moderation history</small></div></section>
+    <section class="section wrap" id="features"><div class="section-intro"><div class="eyebrow">BUILT FOR OVERSIGHT</div><h2>Everything important.<br><span>Nothing buried.</span></h2><p>ProGuard brings the core moderation workflow into a clean, readable space.</p></div><div class="feature-grid"><article class="feature-card"><span class="feature-icon blue-icon">⚑</span><h3>Reports & cases</h3><p>Organize incoming reports, review the details, and keep decisions consistent.</p><span class="feature-number">01</span></article><article class="feature-card"><span class="feature-icon purple-icon">⌁</span><h3>Moderation history</h3><p>Make actions easier to inspect with a dedicated activity and audit view.</p><span class="feature-number">02</span></article><article class="feature-card"><span class="feature-icon cyan-icon">◈</span><h3>Owner-only controls</h3><p>Keep sensitive configuration and final review decisions limited to the owner.</p><span class="feature-number">03</span></article></div></section>
+    <section class="security-section" id="security"><div class="wrap security-inner"><div class="security-emblem"><div class="emblem-ring ring-a"></div><div class="emblem-ring ring-b"></div><div class="emblem-shield"><svg viewBox="0 0 64 70" aria-hidden="true"><path d="M32 4 57 13v19c0 15-10.5 25.5-25 34C16.5 57.5 7 47 7 32V13L32 4Z"/><path d="m20 34 8 8 17-19"/></svg></div></div><div class="security-copy"><div class="eyebrow">SECURITY BY DESIGN</div><h2>Private controls.<br><span>Clear accountability.</span></h2><p>Signing in identifies your Discord account. The backend must separately verify the owner before allowing privileged actions. A website button or hidden page is never an access-control boundary.</p><div class="security-points"><span><b>✓</b> Server-side authorization</span><span><b>✓</b> Secrets kept off the browser</span><span><b>✓</b> Reports reviewed with clear permissions</span></div></div></div></section>
+    <section class="section wrap how-section" id="how"><div class="section-intro centered"><div class="eyebrow">THE WORKFLOW</div><h2>From report to review.</h2><p>The interface is ready to connect to your existing bot and data store.</p></div><div class="steps"><div class="step"><span>01</span><h3>Sign in</h3><p>Authenticate through Discord OAuth2.</p></div><div class="step-connector"></div><div class="step"><span>02</span><h3>Review</h3><p>View reports and moderation activity you are authorized to access.</p></div><div class="step-connector"></div><div class="step"><span>03</span><h3>Take action</h3><p>Owner-only actions are validated by the backend before execution.</p></div></div></section>
+    <section class="cta wrap"><div><div class="eyebrow">PROGUARD SECURITY HUB</div><h2>Your community.<br><span>Your oversight.</span></h2></div><a class="button button-primary" href="/auth/discord">Sign in with Discord <span>↗</span></a></section>
+  </main>
+  <footer class="footer wrap"><a class="brand footer-brand" href="#home"><span class="brand-mark"><svg viewBox="0 0 40 44" aria-hidden="true"><path d="M20 2 36 8v12c0 10-6.7 17.1-16 22C10.7 37.1 4 30 4 20V8L20 2Z"/><path d="m12 21 5.2 5.2L28.5 15"/></svg></span><span>PRO<span class="brand-light">GUARD</span></span></a><span>Community protection, with accountability.</span><span>© <span id="year"></span> ProGuard</span></footer>
+  <script src="app.js"></script>
+</body>
+</html>
