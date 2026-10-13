@@ -3,58 +3,332 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#080b12">
-  <meta name="description" content="ProGuard — security command center for Discord communities.">
-  <title>ProGuard — Security Command Center</title>
+  <meta name="theme-color" content="#04060c">
+  <meta name="description" content="ProGuard security command center for Discord communities.">
+  <title>ProGuard · Security Command Center</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css">
-  <script src="/script.js" defer></script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="backdrop-grid" aria-hidden="true"></div><div class="glow glow-one" aria-hidden="true"></div><div class="glow glow-two" aria-hidden="true"></div>
   <div class="app-shell">
+    <!-- ================= SIDEBAR ================= -->
     <aside class="sidebar" id="sidebar">
-      <a class="brand" href="#overview" aria-label="ProGuard home"><span class="brand-mark"><svg viewBox="0 0 48 48"><path d="M24 4 40 10v12c0 10-6.5 17-16 22C14.5 39 8 32 8 22V10L24 4Z"/><path d="m16 24 5 5 11-12"/></svg></span><span class="brand-copy"><b>PROGUARD</b><small>SECURITY CENTER</small></span></a>
-      <div class="side-label">WORKSPACE</div>
-      <button class="server-select" id="serverSelect" type="button" aria-expanded="false"><span class="server-avatar" id="serverInitials">PG</span><span class="server-info"><b id="serverName">Select a server</b><small id="serverSub">Discord workspace</small></span><span class="chevron">⌄</span></button>
+      <a class="brand" href="#overview" aria-label="ProGuard home">
+        <span class="brand-mark"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 4 40 10v12c0 10-6.5 17-16 22C14.5 39 8 32 8 22V10L24 4Z"/><path d="m16 24 5 5 11-12"/></svg></span>
+        <span class="brand-copy"><strong>PROGUARD</strong><small>SECURITY CENTER</small></span>
+      </a>
+
+      <div class="workspace-label">SERVER</div>
+      <button class="server-select" id="serverSelect" type="button" aria-haspopup="listbox">
+        <span class="server-avatar">PG</span>
+        <span class="server-info"><b>Select a server</b><small>Discord server</small></span>
+        <svg class="chevron" viewBox="0 0 16 16"><path d="m4 6 4 4 4-4"/></svg>
+      </button>
       <div class="server-menu hidden" id="serverMenu" role="listbox" aria-label="Your servers"></div>
+
       <nav class="nav-list" aria-label="Main navigation">
-        <div class="side-label">COMMAND CENTER</div>
-        <a class="nav-link active" href="#overview" data-page="overview"><span class="nav-symbol">◫</span>Overview</a>
-        <a class="nav-link" href="#reports" data-page="reports"><span class="nav-symbol">△</span>Reports<span class="nav-count" id="reportNavCount">0</span></a>
-        <a class="nav-link" href="#cases" data-page="cases"><span class="nav-symbol">▤</span>Cases</a>
-        <a class="nav-link" href="#analytics" data-page="analytics"><span class="nav-symbol">⌁</span>Analytics</a>
-        <div class="side-label side-label-gap">MANAGEMENT</div>
-        <a class="nav-link" href="#bot" data-page="bot"><span class="nav-symbol">⌘</span>Bot status</a>
-        <a class="nav-link" href="#settings" data-page="settings"><span class="nav-symbol">⚙</span>Server settings</a>
-        <a class="nav-link hidden" href="#admin" data-page="admin" id="adminNav"><span class="nav-symbol">◆</span>Owner controls<span class="owner-dot"></span></a>
+        <span class="nav-caption">COMMAND CENTER</span>
+        <a class="nav-link active" href="#overview" data-page="overview"><span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="11" width="7" height="10" rx="1.5"/><rect x="3" y="13" width="7" height="8" rx="1.5"/></svg></span>Overview</a>
+        <a class="nav-link" href="#reports" data-page="reports"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 3 21 19H3L12 3Z"/><path d="M12 9v4m0 3h.01"/></svg></span>Reports <span class="nav-count" id="reportNavCount">—</span></a>
+        <a class="nav-link" href="#cases" data-page="cases"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v10a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-10Z"/><path d="M8 9h8M8 13h8M8 17h4"/></svg></span>Cases</a>
+        <a class="nav-link" href="#analytics" data-page="analytics"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 19V5m0 14h17"/><path d="m7 15 4-4 3 2 6-7"/></svg></span>Analytics</a>
+        <span class="nav-caption nav-caption-spaced">MANAGEMENT</span>
+        <a class="nav-link" href="#bot" data-page="bot"><span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="3"/><path d="M12 3v4m-4 6h.01M16 13h.01M8 17h8"/></svg></span>Bot status</a>
+        <a class="nav-link" href="#settings" data-page="settings"><span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M4.9 4.9l2.1 2.1m10 10 2.1 2.1M2 12h3m14 0h3M4.9 19.1 7 17m10-10 2.1-2.1"/></svg></span>Server settings</a>
+        <a class="nav-link admin-nav hidden" href="#admin" data-page="admin" id="adminNav"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 3 14 5.5l3.2-.2.8 3.1 2.6 1.9-1.3 2.9 1.3 2.9-2.6 1.9-.8 3.1-3.2-.2L12 23l-2-2.5-3.2.2-.8-3.1-2.6-1.9 1.3-2.9-1.3-2.9L6 8l.8-3.1 3.2.2L12 3Z"/><circle cx="12" cy="13" r="3"/></svg></span>Owner controls <span class="owner-dot"></span></a>
       </nav>
-      <div class="sidebar-bottom"><div class="protection-card"><span class="protection-icon">✦</span><div><b>Protection center</b><small id="protectionText">Waiting for connection</small></div><span class="status-dot" id="protectionDot"></span></div><div class="sidebar-foot"><span class="mini-shield">◆</span><span>PROGUARD <span class="muted">/</span> <span id="appVersion">LIVE CONSOLE</span></span></div></div>
+
+      <div class="sidebar-bottom">
+        <div class="protection-card">
+          <div class="protection-orb"><svg viewBox="0 0 24 24"><path d="M12 3 20 6v6c0 5-3.2 8-8 10-4.8-2-8-5-8-10V6l8-3Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg></div>
+          <div><b>Protection layer</b><small id="protectionText">Checking status…</small></div>
+          <span class="status-pip" id="protectionPip"></span>
+        </div>
+        <button class="user-card" id="loginButton" type="button">
+          <span class="user-avatar" id="userAvatar">?</span>
+          <span class="user-details"><b id="userName">Not signed in</b><small id="userEmail">Sign in with Discord</small></span>
+          <span class="user-action" id="userAction">↗</span>
+        </button>
+        <div class="sidebar-footer"><span>PROGUARD <span id="appVersion">v2.0</span></span><span class="footer-dot"></span><span>SECURE SESSION</span></div>
+      </div>
     </aside>
-    <main class="main-content">
-      <header class="topbar"><button class="mobile-menu" id="mobileMenu" aria-label="Toggle navigation">☰</button><div class="breadcrumb"><span>ProGuard</span><span class="slash">/</span><b id="breadcrumbPage">Overview</b></div><div class="top-actions"><span class="connection-pill" id="connectionPill"><i></i><span id="connectionText">Connecting</span></span><button class="icon-button" id="refreshButton" title="Refresh dashboard" aria-label="Refresh dashboard">↻</button><button class="login-button" id="loginButton" type="button">Connect Discord <span>↗</span></button><button class="profile-button hidden" id="profileButton" type="button"><img id="topAvatar" alt="" src=""><span id="topName">Account</span><span class="chevron">⌄</span></button></div></header>
-      <div class="page-wrap">
-        <div class="notice hidden" id="connectionBanner" role="status"><span class="notice-icon">i</span><div><b id="connectionTitle">Connection notice</b><p id="connectionMessage"></p></div><button id="dismissNotice" aria-label="Dismiss notice">×</button></div>
-        <section class="page active" id="page-overview" data-section="overview">
-          <div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> SECURITY OVERVIEW</div><h1>Command <span>center.</span></h1><p class="page-description">Your server's security posture, at a glance.</p></div><div class="heading-actions"><span class="updated-label" id="lastUpdated">Waiting for data</span><button class="button button-primary" id="overviewRefresh">↻ <span>Refresh data</span></button></div></div>
-          <div class="hero-panel"><div class="hero-copy"><div class="hero-tag"><span class="pulse"></span> PROGUARD INTELLIGENCE</div><h2>Keep your community<br><span>one step ahead.</span></h2><p>Review incoming reports, track active cases, and monitor your protection services from one secure workspace.</p><div class="hero-buttons"><button class="button button-primary" data-goto="reports">Review reports <span>→</span></button><button class="button button-ghost" data-goto="bot">View bot status</button></div></div><div class="hero-visual" aria-hidden="true"><div class="orbit orbit-outer"></div><div class="orbit orbit-inner"></div><div class="shield-core"><svg viewBox="0 0 100 100"><path d="M50 8 82 20v25c0 21-13 36-32 47C31 81 18 66 18 45V20L50 8Z"/><path d="m35 49 10 10 21-23"/></svg><span>ACTIVE<br>DEFENSE</span></div><span class="visual-chip chip-a">ENCRYPTED SESSION</span><span class="visual-chip chip-b">THREAT MONITOR</span><span class="visual-chip chip-c"><i></i> SYSTEM READY</span></div></div>
-          <div class="section-head"><div><h2>Security snapshot</h2><p>Live values returned by your ProGuard service.</p></div><span class="subtle-tag">SELECTED SERVER</span></div>
-          <div class="metrics-grid"><article class="metric-card"><div class="metric-top"><span>Open reports</span><span class="metric-icon amber">△</span></div><div class="metric-value" id="metricReports">—</div><div class="metric-foot"><span class="metric-indicator amber-text">●</span>Awaiting review</div><div class="metric-bar"><i class="bar-amber" id="reportsBar"></i></div></article><article class="metric-card"><div class="metric-top"><span>Active cases</span><span class="metric-icon blue">▤</span></div><div class="metric-value" id="metricCases">—</div><div class="metric-foot">Currently being handled</div><div class="metric-bar"><i class="bar-blue" id="casesBar"></i></div></article><article class="metric-card"><div class="metric-top"><span>Resolved reports</span><span class="metric-icon green">✓</span></div><div class="metric-value" id="metricResolved">—</div><div class="metric-foot">Resolution count</div><div class="metric-bar"><i class="bar-green" id="resolvedBar"></i></div></article><article class="metric-card"><div class="metric-top"><span>Bot connection</span><span class="metric-icon purple">⌘</span></div><div class="metric-value metric-word" id="metricBot">Unknown</div><div class="metric-foot" id="metricBotFoot">Waiting for heartbeat</div><div class="metric-bar"><i class="bar-purple" id="botBar"></i></div></article></div>
-          <div class="overview-grid"><article class="panel"><div class="panel-heading"><div><h3>Recent reports</h3><p>Latest items that need attention</p></div><button class="text-button" data-goto="reports">View all <span>→</span></button></div><div id="recentReports" class="data-list"><div class="empty-state"><span class="empty-symbol">◌</span><b>Connect Discord to load reports</b><p>Your latest reports will appear here.</p></div></div></article><article class="panel"><div class="panel-heading"><div><h3>Service health</h3><p>Connection and availability</p></div><span class="live-tag" id="liveLabel"><i></i> WAITING</span></div><div class="health-list"><div class="health-row"><span class="health-icon">⌘</span><div class="health-copy"><b>Discord bot</b><small id="healthBotDetail">No heartbeat received yet</small></div><span class="health-status" id="healthBot">Unknown</span></div><div class="health-row"><span class="health-icon">◈</span><div class="health-copy"><b>Dashboard API</b><small>Cloudflare Worker response</small></div><span class="health-status" id="healthApi">Checking</span></div><div class="health-row"><span class="health-icon">▣</span><div class="health-copy"><b>Selected server</b><small id="healthGuildDetail">Choose a server after sign-in</small></div><span class="health-status" id="healthGuild">Unknown</span></div></div><div class="health-footer"><span class="pulse"></span><span id="healthFooterText">Waiting for service check</span></div></article></div>
+
+    <!-- ================= MAIN ================= -->
+    <main class="main-area">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-button menu-button" id="menuButton" aria-label="Open menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+          <div class="breadcrumb"><span>ProGuard</span><span class="crumb-slash">/</span><b id="breadcrumbCurrent">Overview</b></div>
+        </div>
+        <div class="topbar-right">
+          <span class="live-indicator" id="liveIndicator"><i></i><span id="liveLabel">CONNECTING</span></span>
+          <button class="icon-button" id="refreshButton" aria-label="Refresh data" title="Refresh data"><svg viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 9a6.5 6.5 0 0 1 11-2l3 5M4 12l3 5a6.5 6.5 0 0 0 11-2"/></svg></button>
+          <div class="account-wrap">
+            <button class="top-user" id="topLoginButton" type="button" aria-haspopup="true" aria-expanded="false">
+              <span class="top-avatar" id="topAvatar">?</span>
+              <span class="top-name" id="topName">Sign in with Discord</span>
+            </button>
+            <div class="account-menu hidden" id="accountMenu" role="menu">
+              <div class="account-head">
+                <span class="top-avatar" id="accountAvatar">?</span>
+                <div><b id="accountName">—</b><small class="account-id" id="accountId">—</small></div>
+              </div>
+              <p class="account-email" id="accountEmail">No email on this Discord account</p>
+              <button class="button button-danger" id="signOutButton" type="button">Sign out</button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-wrap">
+        <div class="connection-banner hidden" id="connectionBanner" role="status">
+          <span class="banner-symbol">!</span>
+          <div><b>Dashboard data unavailable</b><p id="connectionMessage">Could not reach the ProGuard API.</p></div>
+          <button class="banner-retry" id="bannerRetry" type="button">Retry</button>
+        </div>
+
+        <!-- ---------- OVERVIEW ---------- -->
+        <section class="page-view active" id="page-overview" data-view="overview">
+          <div class="page-heading">
+            <div>
+              <div class="eyebrow"><span class="eyebrow-line"></span> SECURITY OPERATIONS</div>
+              <h1>Command <span>center.</span></h1>
+              <p class="page-subtitle">Live security posture for the selected server.</p>
+            </div>
+            <div class="heading-actions">
+              <div class="date-chip"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg><span id="currentDate">Today</span></div>
+              <button class="button button-primary" id="reviewReportsButton" type="button">Review reports</button>
+            </div>
+          </div>
+
+          <div class="metric-grid">
+            <article class="metric-card"><div class="metric-top"><span class="metric-label">OPEN REPORTS</span><span class="metric-icon amber"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 21 19H3L12 3Z"/></svg></span></div><div class="metric-value" id="metricOpenReports">—</div><div class="metric-bottom"><span class="metric-note" id="openReportsNote">Waiting for data</span><span class="metric-tag">QUEUE</span></div><div class="metric-track"><span class="track-amber" id="openTrack"></span></div></article>
+            <article class="metric-card"><div class="metric-top"><span class="metric-label">CASES RESOLVED</span><span class="metric-icon green">✓</span></div><div class="metric-value" id="metricResolved">—</div><div class="metric-bottom"><span class="metric-note" id="resolvedNote">All time</span><span class="metric-tag">CLOSED</span></div><div class="metric-track"><span class="track-green" id="resolvedTrack"></span></div></article>
+            <article class="metric-card"><div class="metric-top"><span class="metric-label">SECURITY EVENTS</span><span class="metric-icon">⌁</span></div><div class="metric-value" id="metricEvents">—</div><div class="metric-bottom"><span class="metric-note" id="eventsNote">Recent activity</span><span class="metric-tag">EVENTS</span></div><div class="metric-track"><span class="track-blue" id="eventsTrack"></span></div></article>
+            <article class="metric-card"><div class="metric-top"><span class="metric-label">BOT STATE</span><span class="metric-icon purple">◷</span></div><div class="metric-value" id="metricUptime">—</div><div class="metric-bottom"><span class="metric-note" id="uptimeNote">Waiting for bot heartbeat</span><span class="metric-tag">HEARTBEAT</span></div><div class="metric-track"><span class="track-purple" id="uptimeTrack"></span></div></article>
+          </div>
+
+          <div class="dashboard-grid">
+            <article class="panel">
+              <div class="panel-header">
+                <div><div class="panel-kicker">THREAT MONITORING</div><h2>Security activity</h2><p>Events recorded by the bot over time.</p></div>
+                <div class="filter-select"><select id="activityRange" aria-label="Activity time range"><option value="7d">Last 7 days</option><option value="24h">Last 24 hours</option><option value="30d">Last 30 days</option></select></div>
+              </div>
+              <div class="chart-legend"><span><i class="legend-blue"></i>Events</span><span><i class="legend-muted"></i>Resolved reports</span></div>
+              <div class="chart-wrap" id="activityChart"><div class="chart-empty"><span class="chart-empty-icon">⌁</span><b>Loading activity</b><small>Pick a server to see its events.</small></div></div>
+              <div class="chart-axis" id="chartAxis"><span>—</span><span>—</span><span>—</span><span>—</span><span>—</span><span>—</span><span>—</span></div>
+            </article>
+
+            <article class="panel bot-panel">
+              <div class="panel-header">
+                <div><div class="panel-kicker">BOT TELEMETRY</div><h2>Bot status</h2><p>Confirmed from the bot's heartbeat.</p></div>
+                <span class="status-badge unknown" id="botStatusBadge"><i></i> UNKNOWN</span>
+              </div>
+              <div class="bot-hero">
+                <div class="bot-emblem"><div class="bot-emblem-inner"><svg viewBox="0 0 48 48"><path d="M24 5 39 11v11c0 9-6 15-15 21C15 37 9 31 9 22V11L24 5Z"/><path d="m17 24 5 5 10-12"/></svg></div><span class="orbit orbit-one"></span><span class="orbit orbit-two"></span></div>
+                <div class="bot-hero-text"><b id="botDisplayName">ProGuard Bot</b><span id="botActivity">Waiting for the bot to report in</span><small><i class="tiny-dot"></i><span id="botLastSeen">No heartbeat received</span></small></div>
+              </div>
+              <div class="bot-stats">
+                <div><span>LATENCY</span><b id="botLatency">—</b></div>
+                <div><span>SERVERS</span><b id="botGuilds">—</b></div>
+                <div><span>VERSION</span><b id="botVersion">—</b></div>
+              </div>
+              <button class="button button-secondary full-button" data-go="bot" type="button">View bot details ↗</button>
+            </article>
+          </div>
+
+          <div class="lower-grid">
+            <article class="panel">
+              <div class="panel-header">
+                <div><div class="panel-kicker">NEEDS ATTENTION</div><h2>Open reports</h2><p>Reports waiting for review.</p></div>
+                <button class="text-button" data-go="reports" type="button">View all ↗</button>
+              </div>
+              <div class="table-wrap"><table><thead><tr><th>REPORT</th><th>REASON</th><th>PRIORITY</th><th>STATUS</th><th></th></tr></thead>
+                <tbody id="latestReportsBody"><tr><td colspan="5"><div class="empty-row"><span>⌁</span><b>Loading reports</b><small>Open reports appear here.</small></div></td></tr></tbody></table></div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-header"><div><div class="panel-kicker">QUICK ACCESS</div><h2>Security tools</h2><p>Jump to the tools you need.</p></div></div>
+              <button class="quick-action" data-go="reports" type="button"><span class="quick-action-icon amber">!</span><span><b>Review report queue</b><small>Inspect and triage reports</small></span><span class="quick-arrow">↗</span></button>
+              <button class="quick-action" data-go="cases" type="button"><span class="quick-action-icon">▤</span><span><b>Manage cases</b><small>Track investigations and outcomes</small></span><span class="quick-arrow">↗</span></button>
+              <button class="quick-action" data-go="analytics" type="button"><span class="quick-action-icon purple">↗</span><span><b>Open analytics</b><small>Trends and event totals</small></span><span class="quick-arrow">↗</span></button>
+              <div class="owner-callout"><span class="owner-callout-icon">✳</span><div><b>Owner-only dashboard</b><p>Only the owner account can read or change anything here.</p></div></div>
+            </article>
+          </div>
         </section>
-        <section class="page" id="page-reports" data-section="reports"><div class="page-heading"><div><div class="eyebrow">CASE INTAKE</div><h1>Reports<span>.</span></h1><p class="page-description">Triage reports submitted to your server.</p></div><div class="heading-actions"><select id="reportFilter" class="select-control" aria-label="Filter reports"><option value="all">All reports</option><option value="open">Open</option><option value="reviewing">Reviewing</option><option value="resolved">Resolved</option><option value="dismissed">Dismissed</option></select><button class="button button-primary" id="reportsRefresh">↻ Refresh</button></div></div><div class="panel table-panel"><div class="panel-heading"><div><h3>Report queue</h3><p id="reportsSummary">Reports available to your account</p></div><span class="subtle-tag" id="reportsCount">0 ITEMS</span></div><div class="table-scroll"><table><thead><tr><th>REPORT</th><th>SUBMITTED BY</th><th>SUBJECT</th><th>STATUS</th><th>CREATED</th><th>ACTION</th></tr></thead><tbody id="reportsTable"><tr><td colspan="6" class="table-empty">Connect Discord to load reports.</td></tr></tbody></table></div></div></section>
-        <section class="page" id="page-cases" data-section="cases"><div class="page-heading"><div><div class="eyebrow">INVESTIGATION DESK</div><h1>Cases<span>.</span></h1><p class="page-description">Track investigations and outcomes.</p></div><button class="button button-primary" id="casesRefresh">↻ Refresh cases</button></div><div class="panel table-panel"><div class="panel-heading"><div><h3>Case register</h3><p>Cases linked to reports and moderation work</p></div><span class="subtle-tag" id="casesCount">0 CASES</span></div><div class="table-scroll"><table><thead><tr><th>CASE</th><th>TITLE</th><th>ASSIGNEE</th><th>PRIORITY</th><th>STATUS</th><th>UPDATED</th></tr></thead><tbody id="casesTable"><tr><td colspan="6" class="table-empty">Connect Discord to load cases.</td></tr></tbody></table></div></div></section>
-        <section class="page" id="page-analytics" data-section="analytics"><div class="page-heading"><div><div class="eyebrow">SIGNALS & TRENDS</div><h1>Analytics<span>.</span></h1><p class="page-description">Understand report volume and moderation outcomes.</p></div><select id="analyticsRange" class="select-control"><option value="24h">Last 24 hours</option><option value="7d" selected>Last 7 days</option><option value="30d">Last 30 days</option></select></div><div class="metrics-grid compact-metrics"><article class="metric-card"><div class="metric-top"><span>Total reports</span><span class="metric-icon blue">△</span></div><div class="metric-value" id="analyticsTotal">—</div><div class="metric-foot">In selected period</div></article><article class="metric-card"><div class="metric-top"><span>Resolved</span><span class="metric-icon green">✓</span></div><div class="metric-value" id="analyticsResolved">—</div><div class="metric-foot">Reports resolved</div></article><article class="metric-card"><div class="metric-top"><span>Open now</span><span class="metric-icon amber">◷</span></div><div class="metric-value" id="analyticsOpen">—</div><div class="metric-foot">Awaiting action</div></article><article class="metric-card"><div class="metric-top"><span>Active cases</span><span class="metric-icon purple">▤</span></div><div class="metric-value" id="analyticsCases">—</div><div class="metric-foot">Open investigations</div></article></div><div class="panel chart-panel"><div class="panel-heading"><div><h3>Activity timeline</h3><p>Report activity returned by the API</p></div><span class="subtle-tag">ACTIVITY</span></div><div id="analyticsChart" class="chart-area"><div class="empty-state"><span class="empty-symbol">⌁</span><b>Analytics will appear here</b><p>Connect and select a server to load real data.</p></div></div></div></section>
-        <section class="page" id="page-bot" data-section="bot"><div class="page-heading"><div><div class="eyebrow">SERVICE MONITOR</div><h1>Bot status<span>.</span></h1><p class="page-description">Connection status comes from the Worker’s bot heartbeat.</p></div><button class="button button-primary" id="botRefresh">↻ Check status</button></div><div class="bot-hero panel"><div class="bot-emblem">⌘</div><div class="bot-summary"><span class="eyebrow">PROGUARD DISCORD BOT</span><h2 id="botStatusTitle">Status unavailable</h2><p id="botStatusDescription">Connect your Discord account and select a server to check bot status.</p><div class="bot-meta"><span class="status-chip" id="botStatusChip">UNKNOWN</span><span id="botLastSeen">Last heartbeat: —</span></div></div><div class="bot-actions"><a class="button button-primary" id="inviteBot" href="https://discord.com/oauth2/authorize?client_id=1558816067948642455&amp;permissions=8&amp;scope=bot%20applications.commands" target="_blank" rel="noopener noreferrer">Add to Discord ↗</a><span class="muted small">Discord permissions should be reviewed before installing.</span></div></div><div class="settings-grid"><article class="panel"><div class="panel-heading"><div><h3>Server installation</h3><p>Whether the bot is installed in this server</p></div></div><div class="setting-row"><div><b>Installed</b><small id="installedDetail">Not checked</small></div><span id="installedBadge" class="status-chip">UNKNOWN</span></div><div class="setting-row"><div><b>Protection enabled</b><small>Server-level protection setting</small></div><span id="enabledBadge" class="status-chip">UNKNOWN</span></div></article><article class="panel"><div class="panel-heading"><div><h3>Channel routing</h3><p>Configured Discord destinations</p></div></div><div class="setting-row"><div><b>Reports channel</b><small id="reportChannelValue">Not configured</small></div></div><div class="setting-row"><div><b>Logs channel</b><small id="logChannelValue">Not configured</small></div></div></article></div></section>
-        <section class="page" id="page-settings" data-section="settings"><div class="page-heading"><div><div class="eyebrow">SERVER CONFIGURATION</div><h1>Settings<span>.</span></h1><p class="page-description">Configure ProGuard for the selected Discord server.</p></div><button class="button button-primary" id="saveSettings">Save settings <span>→</span></button></div><div class="settings-grid"><article class="panel settings-panel"><div class="panel-heading"><div><h3>Protection settings</h3><p>These options are validated and saved by the ProGuard API.</p></div></div><label class="toggle-row"><span><b>Automod enabled</b><small>Toggle the automod setting stored by ProGuard.</small></span><input type="checkbox" id="settingEnabled"><i></i></label><label class="field-label" for="reportChannelInput">Report channel ID</label><input class="text-input" id="reportChannelInput" placeholder="Discord channel ID" inputmode="numeric"><label class="field-label" for="logChannelInput">Log channel ID</label><input class="text-input" id="logChannelInput" placeholder="Discord channel ID" inputmode="numeric"><p class="form-note">Only users authorized by the Worker can change settings. Keep channel IDs private to your team.</p></article><article class="panel"><div class="panel-heading"><div><h3>Server access</h3><p>Access is verified on the server, not in this page.</p></div></div><div class="access-callout"><span class="access-icon">◇</span><div><b>Permission-checked requests</b><p>ProGuard checks your Discord session and server permissions before applying changes. The interface never grants access by itself.</p></div></div><div class="setting-row"><div><b>Selected server</b><small id="settingsGuildName">No server selected</small></div></div><div class="setting-row"><div><b>Your role</b><small id="settingsUserRole">Not signed in</small></div></div></article></div></section>
-        <section class="page" id="page-admin" data-section="admin"><div class="page-heading"><div><div class="eyebrow">RESTRICTED WORKSPACE</div><h1>Owner controls<span>.</span></h1><p class="page-description">Owner-only tools. The Worker must authorize every action.</p></div><span class="owner-badge">◆ OWNER ACCESS</span></div><div class="metrics-grid compact-metrics"><article class="metric-card"><div class="metric-top"><span>Owner identity</span><span class="metric-icon purple">◆</span></div><div class="metric-value metric-word" id="ownerIdentity">Unverified</div><div class="metric-foot">Verified by API session</div></article><article class="metric-card"><div class="metric-top"><span>Audit entries</span><span class="metric-icon blue">▤</span></div><div class="metric-value" id="auditCount">—</div><div class="metric-foot">Returned by the server</div></article></div><div class="panel table-panel"><div class="panel-heading"><div><h3>Audit activity</h3><p>Administrative actions available to the authenticated owner</p></div><button class="button button-secondary" id="auditRefresh">Refresh audit</button></div><div class="table-scroll"><table><thead><tr><th>EVENT</th><th>ACTOR</th><th>DETAILS</th><th>TIME</th></tr></thead><tbody id="auditTable"><tr><td colspan="4" class="table-empty">Owner access is required.</td></tr></tbody></table></div></div></section>
-        <footer class="page-footer"><span>© <span id="year"></span> ProGuard Security</span><span><i class="footer-dot"></i> Dashboard interface · server-verified access</span></footer>
+
+        <!-- ---------- REPORTS ---------- -->
+        <section class="page-view" id="page-reports" data-view="reports">
+          <div class="page-heading">
+            <div><div class="eyebrow"><span class="eyebrow-line"></span> MODERATION WORKFLOW</div><h1>Report <span>queue.</span></h1><p class="page-subtitle">Review submissions and record your decisions.</p></div>
+            <button class="button button-secondary" id="reportsRefresh" type="button">↻ Refresh queue</button>
+          </div>
+          <div class="filter-row">
+            <div class="search-box"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input id="reportSearch" placeholder="Search reports, users, reasons…" autocomplete="off"></div>
+            <div class="filter-select"><select id="reportStatusFilter" aria-label="Filter reports"><option value="all">All statuses</option><option value="open">Open</option><option value="reviewing">Reviewing</option><option value="resolved">Resolved</option><option value="dismissed">Dismissed</option></select></div>
+            <div class="filter-select"><select id="reportPriorityFilter" aria-label="Filter by priority"><option value="all">All priorities</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></div>
+          </div>
+          <article class="panel full-table-panel">
+            <div class="panel-header"><div><div class="panel-kicker">CASEWORK</div><h2>All reports <span class="inline-count" id="allReportsCount">0</span></h2></div><span class="table-meta" id="reportTableMeta">Live queue</span></div>
+            <div class="table-wrap"><table><thead><tr><th>REPORT</th><th>SUBMITTED BY</th><th>REASON</th><th>PRIORITY</th><th>STATUS</th><th>RECEIVED</th><th></th></tr></thead><tbody id="allReportsBody"></tbody></table></div>
+            <div class="table-foot"><span id="reportsFootnote">Newest 200 reports</span><button class="text-button" id="clearReportFilters" type="button">Reset filters ↺</button></div>
+          </article>
+        </section>
+
+        <!-- ---------- CASES ---------- -->
+        <section class="page-view" id="page-cases" data-view="cases">
+          <div class="page-heading">
+            <div><div class="eyebrow"><span class="eyebrow-line"></span> INVESTIGATION LOG</div><h1>Case <span>files.</span></h1><p class="page-subtitle">Keep decisions and follow-ups organised.</p></div>
+            <button class="button button-secondary" id="casesRefresh" type="button">↻ Refresh cases</button>
+          </div>
+          <div class="case-summary-grid">
+            <div class="case-summary"><span>ACTIVE</span><b id="activeCasesMetric">—</b><i class="summary-line line-blue"></i></div>
+            <div class="case-summary"><span>RESOLVED</span><b id="resolvedCasesMetric">—</b><i class="summary-line line-green"></i></div>
+            <div class="case-summary"><span>DISMISSED</span><b id="dismissedCasesMetric">—</b><i class="summary-line line-muted"></i></div>
+          </div>
+          <article class="panel full-table-panel">
+            <div class="panel-header">
+              <div><div class="panel-kicker">CASE MANAGEMENT</div><h2>Investigation records</h2><p>Created automatically by moderation actions.</p></div>
+              <div class="filter-select"><select id="caseStatusFilter" aria-label="Filter cases"><option value="all">All cases</option><option value="open">Open</option><option value="investigating">Investigating</option><option value="resolved">Resolved</option><option value="dismissed">Dismissed</option></select></div>
+            </div>
+            <div class="table-wrap"><table><thead><tr><th>CASE</th><th>SUBJECT</th><th>ACTION</th><th>STATUS</th><th>MODERATOR</th><th>UPDATED</th><th></th></tr></thead><tbody id="casesBody"></tbody></table></div>
+          </article>
+        </section>
+
+        <!-- ---------- ANALYTICS ---------- -->
+        <section class="page-view" id="page-analytics" data-view="analytics">
+          <div class="page-heading">
+            <div><div class="eyebrow"><span class="eyebrow-line"></span> SECURITY INTELLIGENCE</div><h1>Threat <span>analytics.</span></h1><p class="page-subtitle">Activity patterns for the selected server.</p></div>
+            <div class="filter-select"><select id="analyticsRange" aria-label="Analytics range"><option value="7d">Last 7 days</option><option value="24h">Last 24 hours</option><option value="30d">Last 30 days</option></select></div>
+          </div>
+          <div class="metric-grid">
+            <article class="metric-card"><div class="metric-top"><span class="metric-label">TOTAL EVENTS</span><span class="metric-icon">⌁</span></div><div class="metric-value" id="analyticsTotalEvents">—</div><div class="metric-bottom"><span class="metric-note">In the selected period</span></div></article>
+            <article class="metric-card"><div class="metric-top"><span class="metric-label">REPORTS RECEIVED</span><span class="metric-icon amber">!</span></div><div class="metric-value" id="analyticsReports">—</div><div class="metric-bottom"><span class="metric-note">In the selected period</span></div></article>
+            <article class="metric-card"><div class="metric-top"><span class="metric-label">RESOLUTION RATE</span><span class="metric-icon green">✓</span></div><div class="metric-value" id="analyticsResolution">—</div><div class="metric-bottom"><span class="metric-note">Resolved ÷ received</span></div></article>
+            <article class="metric-card"><div class="metric-top"><span class="metric-label">AVG. RESPONSE</span><span class="metric-icon purple">◷</span></div><div class="metric-value" id="analyticsResponse">—</div><div class="metric-bottom"><span class="metric-note">Report to resolution</span></div></article>
+          </div>
+          <div class="dashboard-grid analytics-grid">
+            <article class="panel">
+              <div class="panel-header"><div><div class="panel-kicker">EVENT HISTORY</div><h2>Events over time</h2><p>Events and resolved reports.</p></div></div>
+              <div class="chart-legend"><span><i class="legend-blue"></i>Events</span><span><i class="legend-muted"></i>Resolved</span></div>
+              <div class="chart-wrap" id="analyticsChart"><div class="chart-empty"><b>Loading analytics</b><small>Pick a server to see its history.</small></div></div>
+              <div class="chart-axis" id="analyticsAxis"><span>—</span><span>—</span><span>—</span><span>—</span><span>—</span><span>—</span><span>—</span></div>
+            </article>
+            <article class="panel">
+              <div class="panel-header"><div><div class="panel-kicker">CLASSIFICATION</div><h2>Event breakdown</h2><p>Moderation events by type.</p></div></div>
+              <div class="breakdown-list" id="reportBreakdown"><div class="empty-row"><b>Waiting for data</b><small>Categories appear here.</small></div></div>
+            </article>
+          </div>
+        </section>
+
+        <!-- ---------- BOT ---------- -->
+        <section class="page-view" id="page-bot" data-view="bot">
+          <div class="page-heading">
+            <div><div class="eyebrow"><span class="eyebrow-line"></span> SERVICE HEALTH</div><h1>Bot <span>telemetry.</span></h1><p class="page-subtitle">The bot's own heartbeat, not the page load.</p></div>
+            <button class="button button-secondary" id="botRefresh" type="button">↻ Check status</button>
+          </div>
+          <div class="bot-detail-hero">
+            <div class="bot-hero">
+              <div class="bot-emblem large-emblem"><div class="bot-emblem-inner"><svg viewBox="0 0 48 48"><path d="M24 5 39 11v11c0 9-6 15-15 21C15 37 9 31 9 22V11L24 5Z"/><path d="m17 24 5 5 10-12"/></svg></div><span class="orbit orbit-one"></span><span class="orbit orbit-two"></span></div>
+              <div class="bot-hero-text"><div class="panel-kicker">DISCORD APPLICATION</div><h2 id="botDetailName">ProGuard Bot</h2><span>Security reporting and moderation</span><small><i class="tiny-dot"></i><span id="botDetailSeen">Heartbeat status unavailable</span></small></div>
+            </div>
+            <span class="status-badge unknown" id="botDetailBadge"><i></i> UNKNOWN</span>
+          </div>
+          <div class="bot-detail-grid">
+            <article class="panel">
+              <div class="panel-kicker">CONNECTION</div><h2>Service connection</h2>
+              <div class="detail-list">
+                <div><span>Runtime host</span><b>Wispbyte</b></div>
+                <div><span>Process state</span><b id="detailProcessState">Unknown</b></div>
+                <div><span>Gateway latency</span><b id="detailLatency">—</b></div>
+                <div><span>Last heartbeat</span><b id="detailHeartbeat">—</b></div>
+              </div>
+            </article>
+            <article class="panel">
+              <div class="panel-kicker">CAPABILITIES</div><h2>Security modules</h2>
+              <div class="module-list" id="moduleList">
+                <div class="module-row"><span class="module-symbol">◈</span><span><b>Report intake</b><small>Users report from Discord with /report</small></span><span class="module-state">—</span></div>
+                <div class="module-row"><span class="module-symbol">⌁</span><span><b>Event logging</b><small>Joins, leaves, deletes and moderation</small></span><span class="module-state">—</span></div>
+                <div class="module-row"><span class="module-symbol">◉</span><span><b>Case workflow</b><small>Cases from moderation actions</small></span><span class="module-state">—</span></div>
+              </div>
+            </article>
+          </div>
+          <div class="notice-box"><span>i</span><p><b>Note:</b> The dashboard shows the bot's last heartbeat. It cannot start or restart the Wispbyte process.</p></div>
+        </section>
+
+        <!-- ---------- SETTINGS ---------- -->
+        <section class="page-view" id="page-settings" data-view="settings">
+          <div class="page-heading">
+            <div><div class="eyebrow"><span class="eyebrow-line"></span> SERVER CONFIGURATION</div><h1>Server <span>settings.</span></h1><p class="page-subtitle">Changes apply to this server right away.</p></div>
+            <button class="button button-secondary" id="settingsRefresh" type="button">↻ Refresh settings</button>
+          </div>
+          <div class="connection-banner settings-gate hidden" id="settingsGate" role="status">
+            <span class="banner-symbol">!</span>
+            <div><b>The bot is not in this server</b><p>Add it with the invite link, then settings and bot actions unlock.</p></div>
+          </div>
+          <div class="admin-grid">
+            <article class="panel"><div class="panel-kicker">CHANNELS</div><h2>Log channel</h2><p class="panel-description">Moderation and security logs are posted here.</p><div class="filter-select"><select id="logChannelSelect" aria-label="Log channel"><option value="">Loading…</option></select></div><br><button class="button button-secondary full-button" id="saveLogChannel" type="button">Save log channel</button></article>
+            <article class="panel"><div class="panel-kicker">CHANNELS</div><h2>Report channel</h2><p class="panel-description">New reports are posted here, with status updates added below them.</p><div class="filter-select"><select id="reportChannelSelect" aria-label="Report channel"><option value="">Loading…</option></select></div><br><button class="button button-secondary full-button" id="saveReportChannel" type="button">Save report channel</button></article>
+            <article class="panel"><div class="panel-kicker">AUTOMOD</div><h2>Word filter</h2><p class="panel-description">Deletes messages containing blocked words. <b id="blockedWordCount">0</b> configured. Add words with <code>/filterword</code> in Discord.</p><button class="button button-secondary full-button" id="toggleAutomod" type="button">Turn automod on</button></article>
+            <article class="panel"><div class="panel-kicker">BOT ACTIONS</div><h2>Send test message</h2><p class="panel-description">The bot posts a test message in the log channel and reports back.</p><button class="button button-primary full-button" id="sendTestMessage" type="button">Send test message</button><p id="commandResult" aria-live="polite"></p></article>
+          </div>
+        </section>
+
+        <!-- ---------- OWNER ---------- -->
+        <section class="page-view" id="page-admin" data-view="admin">
+          <div class="page-heading">
+            <div><div class="eyebrow"><span class="eyebrow-line"></span> RESTRICTED AREA</div><h1>Owner <span>controls.</span></h1><p class="page-subtitle">Only the configured owner account can see this page.</p></div>
+            <span class="owner-pill"><i></i> OWNER ACCESS</span>
+          </div>
+          <div class="connection-banner hidden" id="ownerGateBanner" role="status">
+            <span class="banner-symbol">!</span>
+            <div><b>Owner account required</b><p>Sign in with the owner Discord account to use these controls.</p></div>
+          </div>
+          <div class="admin-grid">
+            <article class="panel">
+              <div class="panel-kicker">ACCESS POLICY</div><h2>Who can use this dashboard</h2><p class="panel-description">Enforced by the Worker on every request.</p>
+              <div class="permission-row"><div><b>Owner account</b><small>Reports, cases, analytics, settings and bot actions.</small></div><span class="permission-tag owner-permission">OWNER ONLY</span></div>
+              <div class="permission-row"><div><b>Server admins and moderators</b><small>No dashboard access. They still use bot commands in Discord.</small></div><span class="permission-tag member-permission">NO ACCESS</span></div>
+              <div class="notice-box compact-notice"><span>i</span><p>Other Discord accounts that try to sign in are refused, and the attempt is logged.</p></div>
+            </article>
+            <article class="panel">
+              <div class="panel-kicker">AUDIT TRAIL</div><h2>Recent activity</h2><p class="panel-description">Sign-ins and changes made from the dashboard.</p>
+              <div class="audit-list" id="auditList"><div class="empty-row"><b>No audit entries yet</b><small>Sign-ins and changes appear here.</small></div></div>
+              <button class="button button-quiet full-button" id="auditRefresh" type="button">Refresh audit log ↻</button>
+            </article>
+            <article class="panel wide-admin-panel">
+              <div class="panel-kicker">SYSTEM</div><h2>Connected services</h2><p class="panel-description">Health reported by the Worker.</p>
+              <div class="service-grid">
+                <div class="service-item"><span class="service-icon">D</span><div><b>Discord OAuth</b><small>Sign-in and identity</small></div><span class="service-status" id="discordServiceStatus">UNKNOWN</span></div>
+                <div class="service-item"><span class="service-icon">F</span><div><b>Firebase / Firestore</b><small>Reports, cases and audit records</small></div><span class="service-status" id="firebaseServiceStatus">UNKNOWN</span></div>
+                <div class="service-item"><span class="service-icon">W</span><div><b>Cloudflare Worker</b><small>API and authorization</small></div><span class="service-status" id="workerServiceStatus">CHECKING</span></div>
+                <div class="service-item"><span class="service-icon">P</span><div><b>Python bot</b><small>Wispbyte runtime and heartbeat</small></div><span class="service-status" id="runtimeServiceStatus">UNKNOWN</span></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <footer class="main-footer">
+          <span>© <span id="footerYear"></span> PROGUARD</span>
+          <span><i class="footer-dot"></i><span id="footerStatus">Connecting…</span></span>
+          <a href="https://discord.com" target="_blank" rel="noreferrer">DISCORD ↗</a>
+        </footer>
       </div>
     </main>
   </div>
-  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="false"></div>
-  <dialog class="modal" id="actionModal"><form method="dialog" id="actionForm"><div class="modal-head"><div><span class="eyebrow">REPORT ACTION</span><h2 id="modalTitle">Review report</h2></div><button class="icon-button" value="cancel" aria-label="Close dialog">×</button></div><p id="modalDescription" class="page-description"></p><label class="field-label" for="actionNote">Internal note (optional)</label><textarea class="text-input" id="actionNote" rows="3" placeholder="Add context for your team"></textarea><div class="modal-actions"><button class="button button-secondary" value="cancel">Cancel</button><button class="button button-primary" id="confirmAction" type="button">Confirm action</button></div></form></dialog>
+
+  <div class="modal-backdrop hidden" id="reportModal" role="dialog" aria-modal="true" aria-labelledby="reportModalTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <div><div class="panel-kicker">DETAILS</div><h2 id="reportModalTitle">Review</h2></div>
+        <button class="icon-button modal-close" data-close-modal aria-label="Close dialog" type="button">×</button>
+      </div>
+      <div id="reportModalContent"></div>
+      <div class="modal-actions" id="reportModalActions"></div>
+    </div>
+  </div>
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+  <script src="script.js"></script>
 </body>
 </html>
