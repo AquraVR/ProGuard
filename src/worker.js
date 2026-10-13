@@ -28,7 +28,7 @@ const SESSION_COOKIE = "proguard_session";
 const STATE_COOKIE = "proguard_oauth_state";
 const SESSION_SECONDS = 12 * 3600;
 const STATE_SECONDS = 600;
-const BOT_STALE_MS = 150 * 1000;
+const BOT_STALE_MS = 150 * 1000; // heartbeat is written every 60s; 150s without one = stale
 const MANAGE_GUILD = 0x20n;
 const SAMPLE_LIMIT = 2000;
 
@@ -49,8 +49,11 @@ const RANGES = {
 const REQUIRED_VARS = ["DISCORD_CLIENT_ID", "DISCORD_REDIRECT_URI", "OWNER_DISCORD_ID", "FIREBASE_PROJECT_ID"];
 const REQUIRED_SECRETS = ["DISCORD_CLIENT_SECRET", "SESSION_SECRET", "FIREBASE_SERVICE_ACCOUNT_JSON", "DISCORD_BOT_TOKEN"];
 
+const WORKER_VERSION = "2.0.0";
 const enc = new TextEncoder();
 const dec = new TextDecoder();
+
+/* ------------------------------------------------------------------ encoding helpers */
 
 function b64url(bytes) {
   let s = "";
@@ -86,6 +89,8 @@ function timingSafeEqual(a, b) {
   return diff === 0;
 }
 
+/* ------------------------------------------------------------------ signing (HMAC) */
+
 async function hmacSign(secret, value) {
   const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const sig = await crypto.subtle.sign("HMAC", key, enc.encode(value));
@@ -110,6 +115,8 @@ async function readSigned(secret, value) {
     return null;
   }
 }
+
+/* ------------------------------------------------------------------ responses & cookies */
 
 const CSP = [
   "default-src 'self'",
@@ -177,6 +184,8 @@ function withSecurityHeaders(res) {
   return new Response(res.body, { status: res.status, headers });
 }
 
+/* ------------------------------------------------------------------ rate limiting (best effort, per isolate) */
+
 const buckets = new Map();
 function rateOk(key, limit, windowMs = 60000) {
   const now = Date.now();
@@ -191,15 +200,24 @@ function rateOk(key, limit, windowMs = 60000) {
   return b.n <= limit;
 }
 
-function configProblem(env) {
+/* ------------------------------------------------------------------ configuration */
+
+function missingConfig(env) {
   const missing = [...REQUIRED_VARS, ...REQUIRED_SECRETS].filter((k) => !env[k] || !String(env[k]).trim());
   if (!SNOWFLAKE.test(String(env.OWNER_DISCORD_ID || ""))) missing.push("OWNER_DISCORD_ID (must be a Discord ID)");
+  return missing;
+}
+
+function configProblem(env) {
+  const missing = missingConfig(env);
   if (missing.length) {
     console.error("ProGuard misconfigured. Missing or invalid:", missing.join(", "));
     return fail(500, "misconfigured", "ProGuard is not configured yet. The owner needs to finish the setup.");
   }
   return null;
 }
+
+/* ------------------------------------------------------------------ Google service-account auth (RS256 JWT) */
 
 let tokenCache = { token: null, exp: 0 };
 
@@ -217,9 +235,21 @@ async function googleAccessToken(env) {
   if (sa.project_id && sa.project_id !== env.FIREBASE_PROJECT_ID) throw new Error("service account project mismatch");
 
   const header = b64urlJson({ alg: "RS256", typ: "JWT" });
-  const claims = b64urlJson({ iss: sa.client_email, scope: GOOGLE.scope, aud: GOOGLE.token, iat: now, exp: now + 3600 });
+  const claims = b64urlJson({
+    iss: sa.client_email,
+    scope: GOOGLE.scope,
+    aud: GOOGLE.token,
+    iat: now,
+    exp: now + 3600,
+  });
   const input = `${header}.${claims}`;
-  const key = await crypto.subtle.importKey("pkcs8", pemToDer(sa.private_key), { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    pemToDer(sa.private_key),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
   const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, enc.encode(input));
   const assertion = `${input}.${b64url(new Uint8Array(sig))}`;
 
@@ -234,10 +264,16 @@ async function googleAccessToken(env) {
   return tokenCache.token;
 }
 
+/* ------------------------------------------------------------------ Firestore value encoding */
+
 function encodeValue(v) {
   if (v === null || v === undefined) return { nullValue: null };
   if (typeof v === "boolean") return { booleanValue: v };
-  if (typeof v === "number") return Number.isInteger(v) && Math.abs(v) <= Number.MAX_SAFE_INTEGER ? { integerValue: String(v) } : { doubleValue: v };
+  if (typeof v === "number") {
+    return Number.isInteger(v) && Math.abs(v) <= Number.MAX_SAFE_INTEGER
+      ? { integerValue: String(v) }
+      : { doubleValue: v };
+  }
   if (typeof v === "string") return { stringValue: v };
   if (v instanceof Date) return { timestampValue: v.toISOString() };
   if (Array.isArray(v)) return { arrayValue: { values: v.map(encodeValue) } };
@@ -270,6 +306,8 @@ function decodeFields(fields) {
   for (const [k, v] of Object.entries(fields || {})) out[k] = decodeValue(v);
   return out;
 }
+
+/* ------------------------------------------------------------------ Firestore REST */
 
 function fsBase(env) {
   return `${GOOGLE.firestore}/projects/${encodeURIComponent(env.FIREBASE_PROJECT_ID)}/databases/(default)/documents`;
@@ -323,7 +361,14 @@ async function fsDelete(env, path) {
   if (!res.ok && res.status !== 404) throw fsError(res, "delete");
 }
 
-const FS_OPS = { "==": "EQUAL", ">": "GREATER_THAN", ">=": "GREATER_THAN_OR_EQUAL", "<": "LESS_THAN", "<=": "LESS_THAN_OR_EQUAL" };
+// Firestore REST expects enum names, not symbols.
+const FS_OPS = {
+  "==": "EQUAL",
+  ">": "GREATER_THAN",
+  ">=": "GREATER_THAN_OR_EQUAL",
+  "<": "LESS_THAN",
+  "<=": "LESS_THAN_OR_EQUAL",
+};
 
 function buildStructured(q) {
   const s = { from: [{ collectionId: q.collection }] };
@@ -335,7 +380,9 @@ function buildStructured(q) {
     });
     s.where = filters.length === 1 ? filters[0] : { compositeFilter: { op: "AND", filters } };
   }
-  if (q.orderBy && q.orderBy.length) s.orderBy = q.orderBy.map(([field, direction = "DESCENDING"]) => ({ field: { fieldPath: field }, direction }));
+  if (q.orderBy && q.orderBy.length) {
+    s.orderBy = q.orderBy.map(([field, direction = "DESCENDING"]) => ({ field: { fieldPath: field }, direction }));
+  }
   if (q.select && q.select.length) s.select = { fields: q.select.map((f) => ({ fieldPath: f })) };
   if (q.limit) s.limit = q.limit;
   return s;
@@ -349,16 +396,25 @@ async function fsQuery(env, parentPath, q) {
   const res = await fsFetch(env, "POST", queryUrl(env, parentPath, "runQuery"), { structuredQuery: buildStructured(q) });
   if (!res.ok) throw fsError(res, "query");
   const rows = await res.json();
-  return rows.filter((r) => r.document).map((r) => ({ id: r.document.name.split("/").pop(), data: decodeFields(r.document.fields) }));
+  return rows
+    .filter((r) => r.document)
+    .map((r) => ({ id: r.document.name.split("/").pop(), data: decodeFields(r.document.fields) }));
 }
 
 async function fsCount(env, parentPath, q) {
-  const body = { structuredAggregationQuery: { structuredQuery: buildStructured(q), aggregations: [{ alias: "n", count: {} }] } };
+  const body = {
+    structuredAggregationQuery: {
+      structuredQuery: buildStructured(q),
+      aggregations: [{ alias: "n", count: {} }],
+    },
+  };
   const res = await fsFetch(env, "POST", queryUrl(env, parentPath, "runAggregationQuery"), body);
   if (!res.ok) throw fsError(res, "count");
   const rows = await res.json();
   return Number(rows?.[0]?.result?.aggregateFields?.n?.integerValue || 0);
 }
+
+/* ------------------------------------------------------------------ Discord helpers */
 
 const installCache = new Map();
 const channelCache = new Map();
@@ -389,6 +445,8 @@ async function textChannels(env, gid) {
   return v;
 }
 
+/* ------------------------------------------------------------------ sessions & authorization */
+
 async function getSession(request, env) {
   const raw = getCookie(request, SESSION_COOKIE);
   if (!raw) return null;
@@ -405,7 +463,11 @@ async function getSession(request, env) {
   if (!d.expires_at || Date.parse(d.expires_at) <= Date.now()) return null;
   if (String(d.user_id) !== String(env.OWNER_DISCORD_ID)) return null;
 
-  return { sid, user: { id: String(d.user_id), username: d.username, global_name: d.global_name, avatar: d.avatar, email: d.email }, guilds: Array.isArray(d.guilds) ? d.guilds : [] };
+  return {
+    sid,
+    user: { id: String(d.user_id), username: d.username, global_name: d.global_name, avatar: d.avatar, email: d.email },
+    guilds: Array.isArray(d.guilds) ? d.guilds : [],
+  };
 }
 
 async function authOwner(request, env) {
@@ -417,7 +479,9 @@ async function authOwner(request, env) {
 function requireGuild(session, url) {
   const gid = url.searchParams.get("guild_id") || "";
   if (!SNOWFLAKE.test(gid)) return { res: fail(400, "invalid_guild", "Choose a valid server.") };
-  if (!session.guilds.some((g) => g.id === gid)) return { res: fail(403, "guild_forbidden", "You do not have access to this server.") };
+  if (!session.guilds.some((g) => g.id === gid)) {
+    return { res: fail(403, "guild_forbidden", "You do not have access to this server.") };
+  }
   return { gid };
 }
 
@@ -427,8 +491,19 @@ function csrfOk(request, url) {
 }
 
 async function audit(env, session, action, gid, target, detail = {}) {
-  await fsCreate(env, "audit_log", null, { ts: new Date(), action, actor_id: session.user.id, actor_name: session.user.global_name || session.user.username, guild_id: gid || null, target: target == null ? null : String(target), detail });
+  // Fail closed: the caller must not perform the sensitive action if this throws.
+  await fsCreate(env, "audit_log", null, {
+    ts: new Date(),
+    action,
+    actor_id: session.user.id,
+    actor_name: session.user.global_name || session.user.username,
+    guild_id: gid || null,
+    target: target == null ? null : String(target),
+    detail,
+  });
 }
+
+/* ------------------------------------------------------------------ OAuth sign-in */
 
 function startLogin(env) {
   const state = randomId(32);
@@ -446,15 +521,29 @@ function startLogin(env) {
 
 async function revokeDiscordToken(env, token) {
   try {
-    await fetch(DISCORD.revoke, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ client_id: env.DISCORD_CLIENT_ID, client_secret: env.DISCORD_CLIENT_SECRET, token }) });
-  } catch {}
+    await fetch(DISCORD.revoke, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: env.DISCORD_CLIENT_ID,
+        client_secret: env.DISCORD_CLIENT_SECRET,
+        token,
+      }),
+    });
+  } catch {
+    /* best effort */
+  }
 }
 
 async function finishLogin(request, env, url) {
-  if (url.searchParams.get("error")) return redirect("/?login=cancelled", [clearCookie(STATE_COOKIE)]);
+  if (url.searchParams.get("error")) {
+    return redirect("/?login=cancelled", [clearCookie(STATE_COOKIE)]);
+  }
   const code = url.searchParams.get("code") || "";
   const state = url.searchParams.get("state") || "";
-  if (!CODE_RE.test(code) || !STATE_RE.test(state)) return fail(400, "bad_callback", "Sign-in information was incomplete. Start sign-in again.");
+  if (!CODE_RE.test(code) || !STATE_RE.test(state)) {
+    return fail(400, "bad_callback", "Sign-in information was incomplete. Start sign-in again.");
+  }
 
   const saved = await readSigned(env.SESSION_SECRET, getCookie(request, STATE_COOKIE) || "");
   const nowS = Math.floor(Date.now() / 1000);
@@ -464,7 +553,17 @@ async function finishLogin(request, env, url) {
     return res;
   }
 
-  const tokenRes = await fetch(DISCORD.token, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ client_id: env.DISCORD_CLIENT_ID, client_secret: env.DISCORD_CLIENT_SECRET, grant_type: "authorization_code", code, redirect_uri: env.DISCORD_REDIRECT_URI }) });
+  const tokenRes = await fetch(DISCORD.token, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: env.DISCORD_CLIENT_ID,
+      client_secret: env.DISCORD_CLIENT_SECRET,
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: env.DISCORD_REDIRECT_URI,
+    }),
+  });
   if (!tokenRes.ok) return fail(502, "oauth_exchange", "Discord rejected the sign-in. Try again.");
   const tok = await tokenRes.json();
   if (!tok.access_token) return fail(502, "oauth_exchange", "Discord did not return a session.");
@@ -475,13 +574,25 @@ async function finishLogin(request, env, url) {
   const me = meOk ? await meRes.json() : null;
   const guildsAll = guildsRes.ok ? await guildsRes.json() : [];
   await revokeDiscordToken(env, tok.access_token);
-  if (!meOk || !me || !SNOWFLAKE.test(String(me.id))) return fail(502, "oauth_identity", "Discord account verification failed. Try again.");
+  if (!meOk || !me || !SNOWFLAKE.test(String(me.id))) {
+    return fail(502, "oauth_identity", "Discord account verification failed. Try again.");
+  }
 
   const clearState = clearCookie(STATE_COOKIE);
   if (String(me.id) !== String(env.OWNER_DISCORD_ID)) {
     try {
-      await fsCreate(env, "audit_log", null, { ts: new Date(), action: "login.denied", actor_id: String(me.id), actor_name: me.global_name || me.username || null, guild_id: null, target: null, detail: {} });
-    } catch {}
+      await fsCreate(env, "audit_log", null, {
+        ts: new Date(),
+        action: "login.denied",
+        actor_id: String(me.id),
+        actor_name: me.global_name || me.username || null,
+        guild_id: null,
+        target: null,
+        detail: {},
+      });
+    } catch {
+      /* denied logins are still refused even if logging fails */
+    }
     return redirect("/?access=denied", [clearState]);
   }
 
@@ -491,9 +602,21 @@ async function finishLogin(request, env, url) {
     .map((g) => ({ id: String(g.id), name: String(g.name || "Server").slice(0, 100), icon: g.icon || null, owner: !!g.owner }));
 
   const sid = randomId(32);
-  const session = { user: { id: String(me.id), username: me.username || null, global_name: me.global_name || null, avatar: me.avatar || null, email: me.email || null }, guilds };
+  const session = {
+    user: { id: String(me.id), username: me.username || null, global_name: me.global_name || null, avatar: me.avatar || null, email: me.email || null },
+    guilds,
+  };
   await audit(env, session, "login", null, me.id, { guilds: guilds.length });
-  await fsSet(env, `dashboard_sessions/${sid}`, { user_id: session.user.id, username: session.user.username, global_name: session.user.global_name, avatar: session.user.avatar, email: session.user.email, guilds, created_at: new Date(), expires_at: new Date(Date.now() + SESSION_SECONDS * 1000) });
+  await fsSet(env, `dashboard_sessions/${sid}`, {
+    user_id: session.user.id,
+    username: session.user.username,
+    global_name: session.user.global_name,
+    avatar: session.user.avatar,
+    email: session.user.email,
+    guilds,
+    created_at: new Date(),
+    expires_at: new Date(Date.now() + SESSION_SECONDS * 1000),
+  });
   const signed = `${sid}.${await hmacSign(env.SESSION_SECRET, sid)}`;
   return redirect("/", [cookieString(SESSION_COOKIE, signed, SESSION_SECONDS), clearState]);
 }
@@ -505,8 +628,11 @@ async function logout(request, env) {
     const sid = raw.slice(0, i);
     const sig = raw.slice(i + 1);
     if (SESSION_ID.test(sid) && timingSafeEqual(await hmacSign(env.SESSION_SECRET, sid), sig)) {
-      try { await fsDelete(env, `dashboard_sessions/${sid}`); }
-      catch (e) { console.error("session delete failed", e.message); }
+      try {
+        await fsDelete(env, `dashboard_sessions/${sid}`);
+      } catch (e) {
+        console.error("session delete failed", e.message);
+      }
     }
   }
   const headers = new Headers(securityHeaders({ "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" }));
@@ -515,12 +641,45 @@ async function logout(request, env) {
   return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
 }
 
+/* ------------------------------------------------------------------ data mapping */
+
 function mapReport(id, d) {
-  return { id, reportId: id, reporter: d.reporter_id ? `User ${d.reporter_id}` : "Unknown", reporterId: d.reporter_id || null, reportedUser: d.target_id ? `User ${d.target_id}` : "Not specified", targetId: d.target_id || null, reason: (d.description || "").slice(0, 120) || "No description", description: d.description || "", status: d.status || "open", priority: d.priority || "medium", createdAt: d.created_at || null, reviewedBy: d.reviewed_by || null, reviewedAt: d.reviewed_at || null, reviewNotes: d.review_notes || "", resolvedBy: d.resolved_by || null, resolvedAt: d.resolved_at || null };
+  return {
+    id,
+    reportId: id,
+    reporter: d.reporter_id ? `User ${d.reporter_id}` : "Unknown",
+    reporterId: d.reporter_id || null,
+    reportedUser: d.target_id ? `User ${d.target_id}` : "Not specified",
+    targetId: d.target_id || null,
+    reason: (d.description || "").slice(0, 120) || "No description",
+    description: d.description || "",
+    status: d.status || "open",
+    priority: d.priority || "medium",
+    createdAt: d.created_at || null,
+    reviewedBy: d.reviewed_by || null,
+    reviewedAt: d.reviewed_at || null,
+    reviewNotes: d.review_notes || "",
+    resolvedBy: d.resolved_by || null,
+    resolvedAt: d.resolved_at || null,
+  };
 }
 
 function mapCase(id, d) {
-  return { id, caseId: id, subject: d.target_id ? `User ${d.target_id}` : "Unspecified", targetId: d.target_id || null, reportId: d.report_id || null, status: d.status || "recorded", assignedTo: d.moderator_id ? `Moderator ${d.moderator_id}` : "Unassigned", action: d.action || "Action", reason: d.reason || "", notes: d.case_notes || "", createdAt: d.created_at || null, updatedAt: d.updated_at || d.created_at || null, updatedBy: d.updated_by || null };
+  return {
+    id,
+    caseId: id,
+    subject: d.target_id ? `User ${d.target_id}` : "Unspecified",
+    targetId: d.target_id || null,
+    reportId: d.report_id || null,
+    status: d.status || "recorded",
+    assignedTo: d.moderator_id ? `Moderator ${d.moderator_id}` : "Unassigned",
+    action: d.action || "Action",
+    reason: d.reason || "",
+    notes: d.case_notes || "",
+    createdAt: d.created_at || null,
+    updatedAt: d.updated_at || d.created_at || null,
+    updatedBy: d.updated_by || null,
+  };
 }
 
 function bucketize(dates, r, now) {
@@ -546,7 +705,16 @@ async function botHeartbeat(env) {
   if (age === null) status = "unknown";
   else if (age > BOT_STALE_MS) status = "stale";
   else status = d.online === true ? "online" : "offline";
-  return { status, lastHeartbeat: d.updated_at || null, latencyMs: d.latency_ms ?? null, guildCount: d.guild_count ?? null, version: d.version || null, botName: d.bot_username || null, startedAt: d.started_at || null, ageSeconds: age === null ? null : Math.round(age / 1000) };
+  return {
+    status,
+    lastHeartbeat: d.updated_at || null,
+    latencyMs: d.latency_ms ?? null,
+    guildCount: d.guild_count ?? null,
+    version: d.version || null,
+    botName: d.bot_username || null,
+    startedAt: d.started_at || null,
+    ageSeconds: age === null ? null : Math.round(age / 1000),
+  };
 }
 
 async function guildDoc(env, gid) {
@@ -554,8 +722,12 @@ async function guildDoc(env, gid) {
   return doc ? doc.data : {};
 }
 
+/* ------------------------------------------------------------------ endpoints */
+
 async function listGuilds(env, session) {
-  const guilds = await Promise.all(session.guilds.map(async (g) => ({ id: g.id, name: g.name, icon: g.icon, owner: g.owner, botInstalled: await botInstalled(env, g.id) })));
+  const guilds = await Promise.all(
+    session.guilds.map(async (g) => ({ id: g.id, name: g.name, icon: g.icon, owner: g.owner, botInstalled: await botInstalled(env, g.id) }))
+  );
   return json({ guilds });
 }
 
@@ -574,7 +746,14 @@ async function overview(env, session, gid, range) {
   ]);
   const events = bucketize(logRows.map((x) => x.data.created_at), r, now);
   const resolved = bucketize(resolvedRows.map((x) => x.data.resolved_at), r, now);
-  return json({ range, metrics: { openReports, resolvedCases, securityEvents, uptimePercent: null }, activity: events.labels.map((label, i) => ({ label, events: events.counts[i], resolved: resolved.counts[i] })), truncated: logRows.length >= SAMPLE_LIMIT || resolvedRows.length >= SAMPLE_LIMIT, bot, services: { firebase: "online", discord: "online" } });
+  return json({
+    range,
+    metrics: { openReports, resolvedCases, securityEvents, uptimePercent: null },
+    activity: events.labels.map((label, i) => ({ label, events: events.counts[i], resolved: resolved.counts[i] })),
+    truncated: logRows.length >= SAMPLE_LIMIT || resolvedRows.length >= SAMPLE_LIMIT,
+    bot,
+    services: { firebase: "online", discord: "online" },
+  });
 }
 
 async function listReports(env, gid, status) {
@@ -597,19 +776,28 @@ async function reportAction(env, session, gid, reportId, body) {
     if (typeof body.notes !== "string") return fail(400, "invalid_notes", "Notes must be text.");
     notes = body.notes.trim().slice(0, 2000);
   }
+
   const path = `guilds/${gid}/reports/${reportId}`;
   const existing = await fsGet(env, path);
   if (!existing) return fail(404, "not_found", "That report was not found.");
+
   const now = new Date();
   const fields = { status: action, reviewed_by: session.user.id, reviewed_at: now };
   if (priority !== undefined) fields.priority = priority;
   if (notes !== undefined) fields.review_notes = notes;
-  if (action === "resolved") { fields.resolved_by = session.user.id; fields.resolved_at = now; }
+  if (action === "resolved") {
+    fields.resolved_by = session.user.id;
+    fields.resolved_at = now;
+  }
+
   await audit(env, session, `report.${action}`, gid, reportId, { priority: priority || null, notes_length: notes ? notes.length : 0 });
   await fsSet(env, path, fields, { mustExist: true });
   if (action !== "open") {
-    try { await enqueueBotCommand(env, session, gid, "post_report_update", { report_id: reportId, status: action }); }
-    catch (e) { console.error("bot notify enqueue failed", e.message); }
+    try {
+      await enqueueBotCommand(env, session, gid, "post_report_update", { report_id: reportId, status: action });
+    } catch (e) {
+      console.error("bot notify enqueue failed", e.message);
+    }
   }
   return json({ ok: true, report: mapReport(reportId, { ...existing.data, ...fields }) });
 }
@@ -630,6 +818,7 @@ async function caseAction(env, session, gid, caseId, body) {
   const path = `guilds/${gid}/cases/${caseId}`;
   const existing = await fsGet(env, path);
   if (!existing) return fail(404, "not_found", "That case was not found.");
+
   const fields = { status: body.status, updated_at: new Date(), updated_by: session.user.id };
   if (notes !== undefined) fields.case_notes = notes;
   await audit(env, session, `case.${body.status}`, gid, caseId, { notes_length: notes ? notes.length : 0 });
@@ -651,25 +840,59 @@ async function analytics(env, gid, range) {
     fsQuery(env, parent, { collection: "reports", where: [["created_at", ">=", cutoff]], select: ["created_at", "resolved_at"], limit: 500 }),
     fsQuery(env, parent, { collection: "reports", where: [["resolved_at", ">=", cutoff]], select: ["resolved_at"], limit: SAMPLE_LIMIT }),
   ]);
+
   const counts = {};
-  for (const row of typeRows) { const t = row.data.type || "Unknown"; counts[t] = (counts[t] || 0) + 1; }
-  const breakdown = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([label, count]) => ({ label, count }));
-  const timings = timingRows.filter((x) => x.data.resolved_at && x.data.created_at).map((x) => Date.parse(x.data.resolved_at) - Date.parse(x.data.created_at)).filter((ms) => Number.isFinite(ms) && ms >= 0);
+  for (const row of typeRows) {
+    const t = row.data.type || "Unknown";
+    counts[t] = (counts[t] || 0) + 1;
+  }
+  const breakdown = Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 12)
+    .map(([label, count]) => ({ label, count }));
+
+  const timings = timingRows
+    .filter((x) => x.data.resolved_at && x.data.created_at)
+    .map((x) => Date.parse(x.data.resolved_at) - Date.parse(x.data.created_at))
+    .filter((ms) => Number.isFinite(ms) && ms >= 0);
   let averageResponseTime = null;
   if (timings.length) {
     const avg = timings.reduce((a, b) => a + b, 0) / timings.length / 60000;
     averageResponseTime = avg >= 60 ? `${(avg / 60).toFixed(1)}h` : `${Math.round(avg)}m`;
   }
+
   const events = bucketize(logRows.map((x) => x.data.created_at), r, now);
   const resolved = bucketize(resolvedRows.map((x) => x.data.resolved_at), r, now);
-  return json({ range, metrics: { totalEvents, reportsReceived, resolutionRate: reportsReceived ? Math.round((reportsResolved / reportsReceived) * 1000) / 10 : null, averageResponseTime }, activity: events.labels.map((label, i) => ({ label, events: events.counts[i], resolved: resolved.counts[i] })), breakdown, truncated: logRows.length >= SAMPLE_LIMIT || typeRows.length >= SAMPLE_LIMIT || resolvedRows.length >= SAMPLE_LIMIT });
+  return json({
+    range,
+    metrics: {
+      totalEvents,
+      reportsReceived,
+      resolutionRate: reportsReceived ? Math.round((reportsResolved / reportsReceived) * 1000) / 10 : null,
+      averageResponseTime,
+    },
+    activity: events.labels.map((label, i) => ({ label, events: events.counts[i], resolved: resolved.counts[i] })),
+    breakdown,
+    truncated: logRows.length >= SAMPLE_LIMIT || typeRows.length >= SAMPLE_LIMIT || resolvedRows.length >= SAMPLE_LIMIT,
+  });
 }
 
 async function settingsGet(env, gid) {
   const d = await guildDoc(env, gid);
   const installed = (await botInstalled(env, gid)) === "installed";
   const channels = installed ? await textChannels(env, gid) : [];
-  return json({ installed, settings: { guildName: d.guild_name || null, enabled: d.enabled === true, automodEnabled: d.automod_enabled === true, logChannelId: d.log_channel_id || null, reportChannelId: d.report_channel_id || null, blockedWordCount: Array.isArray(d.blocked_words) ? d.blocked_words.length : 0 }, channels });
+  return json({
+    installed,
+    settings: {
+      guildName: d.guild_name || null,
+      enabled: d.enabled === true,
+      automodEnabled: d.automod_enabled === true,
+      logChannelId: d.log_channel_id || null,
+      reportChannelId: d.report_channel_id || null,
+      blockedWordCount: Array.isArray(d.blocked_words) ? d.blocked_words.length : 0,
+    },
+    channels,
+  });
 }
 
 async function settingsAction(env, session, gid, body) {
@@ -677,8 +900,9 @@ async function settingsAction(env, session, gid, body) {
   const fields = {};
   if (action === "set_report_channel" || action === "set_log_channel") {
     const key = action === "set_report_channel" ? "report_channel_id" : "log_channel_id";
-    if (body.channelId === null) fields[key] = null;
-    else {
+    if (body.channelId === null) {
+      fields[key] = null;
+    } else {
       const cid = String(body.channelId || "");
       if (!SNOWFLAKE.test(cid)) return fail(400, "invalid_channel", "Choose a valid channel.");
       const channels = await textChannels(env, gid);
@@ -688,7 +912,9 @@ async function settingsAction(env, session, gid, body) {
   } else if (action === "set_automod") {
     if (typeof body.enabled !== "boolean") return fail(400, "invalid_value", "Automod needs true or false.");
     fields.automod_enabled = body.enabled;
-  } else return fail(400, "invalid_action", "Unsupported setting.");
+  } else {
+    return fail(400, "invalid_action", "Unsupported setting.");
+  }
   await audit(env, session, action, gid, null, { ...fields });
   await fsSet(env, `guilds/${gid}`, fields);
   return json({ ok: true });
@@ -696,7 +922,14 @@ async function settingsAction(env, session, gid, body) {
 
 async function enqueueBotCommand(env, session, gid, type, payload) {
   const now = new Date();
-  return fsCreate(env, "bot_commands", null, { guild_id: gid, type, payload, status: "queued", requested_by: session.user.id, requested_at: now });
+  return fsCreate(env, "bot_commands", null, {
+    guild_id: gid,
+    type,
+    payload,
+    status: "queued",
+    requested_by: session.user.id,
+    requested_at: now,
+  });
 }
 
 const CLIENT_BOT_COMMANDS = { send_test_message: true };
@@ -717,8 +950,20 @@ async function botCommandStatus(env, gid, id) {
 
 async function listAudit(env) {
   const rows = await fsQuery(env, "", { collection: "audit_log", orderBy: [["ts"]], limit: 100 });
-  return json({ items: rows.map((x) => ({ id: x.id, action: x.data.action, actorId: x.data.actor_id, actorName: x.data.actor_name, guildId: x.data.guild_id, target: x.data.target, timestamp: x.data.ts })) });
+  return json({
+    items: rows.map((x) => ({
+      id: x.id,
+      action: x.data.action,
+      actorId: x.data.actor_id,
+      actorName: x.data.actor_name,
+      guildId: x.data.guild_id,
+      target: x.data.target,
+      timestamp: x.data.ts,
+    })),
+  });
 }
+
+/* ------------------------------------------------------------------ routing */
 
 async function readJsonBody(request) {
   const ct = request.headers.get("Content-Type") || "";
@@ -729,7 +974,9 @@ async function readJsonBody(request) {
     const body = JSON.parse(text || "{}");
     if (!body || typeof body !== "object" || Array.isArray(body)) return { res: fail(400, "invalid_body", "Send a JSON object.") };
     return { body };
-  } catch { return { res: fail(400, "invalid_json", "Request body is not valid JSON.") }; }
+  } catch {
+    return { res: fail(400, "invalid_json", "Request body is not valid JSON.") };
+  }
 }
 
 async function api(request, env, url, ip) {
@@ -742,15 +989,23 @@ async function api(request, env, url, ip) {
 
   const { res: authRes, session } = await authOwner(request, env);
   if (authRes) return authRes;
-  if (path === "/api/me" && method === "GET") return json({ authenticated: true, isOwner: true, user: session.user });
+
+  if (path === "/api/me" && method === "GET") {
+    return json({ authenticated: true, isOwner: true, user: session.user });
+  }
   if (path === "/api/guilds" && method === "GET") return listGuilds(env, session);
   if (path === "/api/admin/audit" && method === "GET") return listAudit(env);
 
-  const guildScoped = ["/api/overview", "/api/reports", "/api/cases", "/api/analytics", "/api/bot/status", "/api/settings", "/api/bot/command"];
+  // Everything below is scoped to one server the session is allowed to manage.
+  const guildScoped = [
+    "/api/overview", "/api/reports", "/api/cases", "/api/analytics", "/api/bot/status",
+    "/api/settings", "/api/bot/command",
+  ];
   const actionMatch = path.match(/^\/api\/(reports|cases)\/([^/]+)\/action$/);
   const cmdStatusMatch = path.match(/^\/api\/bot\/command\/([^/]+)$/);
   const isScoped = guildScoped.includes(path) || actionMatch || cmdStatusMatch;
   if (!isScoped) return fail(404, "not_found", "Unknown API route.");
+
   const scope = requireGuild(session, url);
   if (scope.res) return scope.res;
   const gid = scope.gid;
@@ -814,10 +1069,17 @@ async function route(request, env) {
   const method = request.method;
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
 
+  // Public health check: no sign-in, no secrets. Lets the site and the owner confirm the new Worker is live.
+  if (path === "/api/health") {
+    if (method !== "GET") return fail(405, "method_not_allowed", "Use GET.");
+    return json({ ok: true, service: "proguard", version: WORKER_VERSION, configured: missingConfig(env).length === 0 });
+  }
+
   if (path.startsWith("/auth/") || path.startsWith("/api/")) {
     const bad = configProblem(env);
     if (bad) return bad;
   }
+
   if (path === "/auth/discord") {
     if (method !== "GET") return fail(405, "method_not_allowed", "Use GET.");
     if (!rateOk(`${ip}:auth`, 20)) return fail(429, "rate_limited", "Too many sign-in attempts. Wait a minute.");
@@ -834,15 +1096,19 @@ async function route(request, env) {
     return logout(request, env);
   }
   if (path.startsWith("/api/")) return api(request, env, url, ip);
+
   if (method !== "GET" && method !== "HEAD") return fail(405, "method_not_allowed", "Method not allowed.");
-  if (!env.ASSETS || typeof env.ASSETS.fetch !== "function") return fail(500, "misconfigured", "Static assets are not bound.");
+  if (!env.ASSETS || typeof env.ASSETS.fetch !== "function") {
+    return fail(500, "misconfigured", "Static assets are not bound.");
+  }
   return withSecurityHeaders(await env.ASSETS.fetch(request));
 }
 
 export default {
   async fetch(request, env) {
-    try { return await route(request, env); }
-    catch (e) {
+    try {
+      return await route(request, env);
+    } catch (e) {
       console.error("ProGuard Worker error:", e && e.message);
       return fail(500, "internal", "Something went wrong. Try again.");
     }
