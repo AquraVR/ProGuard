@@ -3,7 +3,7 @@
 (() => {
   'use strict';
 
-  const OAUTH_URL = 'https://discord.com/oauth2/authorize?client_id=1558816067948642455&response_type=code&redirect_uri=https%3A%2F%2Fproguard.guardianpro.workers.dev%2Fauth%2Fdiscord%2Fcallback&scope=identify+email+guilds';
+  const OAUTH_URL = 'https://discord.com/oauth2/authorize?client_id=1558816067948642455&response_type=code&redirect_uri=https%3A%2F%2Fproguard.guardianpro.workers.dev&scope=identify+email+guilds';
   const OWNER_ID = '1406333881023594576';
   const $ = (id) => document.getElementById(id);
 
